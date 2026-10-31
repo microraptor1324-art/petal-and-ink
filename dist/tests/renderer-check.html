@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Petal & Ink — renderer checks</title>
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    body{max-width:1050px;margin:auto;padding:36px 24px;background:#f8f5ef;color:#413a34;font:14px/1.6 StudioSans,Arial,sans-serif}
+    h1{font:38px/1.1 StudioSerif,Georgia,serif;margin-bottom:12px}.intro-check{max-width:780px;color:#75695e}
+    #status{padding:16px 20px;background:#eee7dc;border-radius:12px;margin:24px 0;font-weight:600}
+    #results{list-style:none;padding:0}#results li{padding:11px 0;border-bottom:1px solid #e0d5c8}.pass{color:#345d3e}.fail{color:#9b3041}
+    .images{display:flex;gap:20px;flex-wrap:wrap;margin-top:28px}.images figure{margin:0;max-width:calc(50% - 10px)}.images canvas{display:block;width:100%;max-width:400px;height:auto;box-shadow:0 10px 30px #493b3215}.images figcaption{font-size:12px;color:#75695e;margin-top:12px}
+    button{background:#7b3948;color:white;border:0;border-radius:24px;padding:12px 20px;margin-top:14px}pre{white-space:pre-wrap;font-size:12px;overflow-wrap:anywhere}
+    @media(max-width:600px){.images figure{max-width:100%}}
+  </style>
+</head>
+<body>
+  <h1>Does every bloom arrive beautifully?</h1>
+  <p class="intro-check">This local verification page checks the flower combinations, repeatable arrangement, text bounds, and actual PNG pixels. The preview and reopened download below are displayed at the same size.</p>
+  <p id="status" role="status">Preparing the artwork and fonts…</p>
+  <ol id="results"></ol>
+  <button id="rerun" type="button" disabled>Run checks again</button>
+  <div class="images">
+    <figure><canvas id="preview" aria-label="Bouquet preview"></canvas><figcaption>Preview rendered at 800 × 1000</figcaption></figure>
+    <figure><canvas id="downloaded" aria-label="Reopened downloaded bouquet"></canvas><figcaption>Reopened 2400 × 3000 PNG, reduced to the same display size</figcaption></figure>
+  </div>
+  <details><summary>Machine-readable results</summary><pre id="json"></pre></details>
+  <script type="module">
+    import { loadArtwork, renderBouquet, exportBouquet, drawFlowerThumbnail } from '../renderer.js';
+
+    const status = document.querySelector('#status');
+    const resultsList = document.querySelector('#results');
+    const rerun = document.querySelector('#rerun');
+    const preview = document.querySelector('#preview');
+    const downloaded = document.querySelector('#downloaded');
+    const baseState = { flower: 'rose', support: 'daisy', palette: 'blush', wrap: 'ivory', seed: 247,
+      recipient: 'Someone lovely', sender: 'Me', message: 'In every ordinary day, you are my favourite little wonder.' };
+    const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
+    function canvas(width=400,height=500){const c=document.createElement('canvas');c.width=width;c.height=height;return c;}
+    function ctx(c){return c.getContext('2d',{colorSpace:'srgb',willReadFrequently:true});}
+    function pixels(c){return ctx(c).getImageData(0,0,c.width,c.height).data;}
+    function checksum(data){let value=2166136261;for(let i=0;i<data.length;i++)value=Math.imul(value^data[i],16777619);return value>>>0;}
+    function record(name,passed,detail=''){
+      window.testResults.checks.push({name,passed,detail});
+      const line=document.createElement('li');line.className=passed?'pass':'fail';
+      line.textContent=`${passed?'PASS':'FAIL'} — ${name}${detail?': '+detail:''}`;resultsList.append(line);
+      document.querySelector('#json').textContent=JSON.stringify(window.testResults,null,2);
+    }
+    async function imageFromBlob(blob){
+      if(typeof createImageBitmap==='function')return createImageBitmap(blob);
+      const url=URL.createObjectURL(blob);const image=new Image();image.src=url;
+      try{await image.decode();return image;}finally{URL.revokeObjectURL(url);}
+    }
+    async function run(){
+      rerun.disabled=true;resultsList.replaceChildren();status.textContent='Preparing the artwork and fonts…';
+      window.testResults={status:'running',checks:[],startedAt:new Date().toISOString()};
+      const began=performance.now();
+      try{
+        await loadArtwork();
+        await Promise.all(['StudioSerif','StudioSans','StudioHand'].map(name=>document.fonts.load(`20px ${name}`)));
+        await document.fonts.ready;
+        record('Artwork and local fonts are ready',true);
+
+        const thumb=canvas(180,180);
+        let thumbnailCount=0;
+        for(const type of ['rose','lily','poppy','sunflower','tulip','peony','hydrangea','orchid','daisy','violet','lavender','babysbreath','greenery']){
+          drawFlowerThumbnail(thumb,type);const data=pixels(thumb);let visible=0;
+          for(let i=3;i<data.length;i+=4)if(data[i]>20)visible++;
+          if(visible<400)throw new Error(`${type} thumbnail contains too little visible artwork (${visible} pixels).`);
+          thumbnailCount++;
+        }
+        record('All flower thumbnails contain visible artwork',thumbnailCount===13,`${thumbnailCount} thumbnails`);
+
+        const small=canvas();let combinations=0;const distinctFlowerPairs=new Set();
+        for(const flower of ['rose','lily','poppy','sunflower','tulip','peony','hydrangea','orchid']){
+          for(const support of ['daisy','violet','greenery','lavender','babysbreath']){
+            for(const palette of ['blush','peach','lavender']){
+              for(const wrap of ['ivory','kraft','rose']){
+                renderBouquet(small,{...baseState,flower,support,palette,wrap},{width:400,height:500});
+                const data=pixels(small);let opaque=true;
+                if(palette==='blush'&&wrap==='ivory')distinctFlowerPairs.add(checksum(data));
+                for(let i=3;i<data.length;i+=160)if(data[i]!==255){opaque=false;break;}
+                if(!opaque)throw new Error(`Unpainted pixels in ${flower}/${support}/${palette}/${wrap}.`);
+                combinations++;
+              }
+            }
+          }
+          status.textContent=`Checking combinations: ${combinations} of 360…`;await nextFrame();
+        }
+        record('Every flower, support, palette, and wrap combination renders',combinations===360,`${combinations} combinations`);
+        record('Every flower and support choice creates a distinct bouquet',distinctFlowerPairs.size===40,`${distinctFlowerPairs.size} distinct flower pairs`);
+
+        renderBouquet(small,baseState,{width:400,height:500});const first=checksum(pixels(small));
+        renderBouquet(small,{...baseState},{width:400,height:500});const second=checksum(pixels(small));
+        renderBouquet(small,{...baseState,seed:baseState.seed+1},{width:400,height:500});const varied=checksum(pixels(small));
+        record('The same saved arrangement produces identical pixels',first===second,`checksums ${first} / ${second}`);
+        record('A new arrangement seed changes the arrangement',first!==varied);
+
+        const textCanvas=canvas();const textCtx=ctx(textCanvas);const nativeText=textCtx.fillText.bind(textCtx);let textCalls=[];
+        textCtx.fillText=(text,x,y,...rest)=>{textCalls.push({text,x,y,width:textCtx.measureText(text).width});nativeText(text,x,y,...rest);};
+        const textCases=['a\n'.repeat(90),'W'.repeat(180),'🌷'.repeat(180),'\n'.repeat(180),'A beautiful note '.repeat(11),'Always you.\n\nAlways us.'];
+        let safeText=true;
+        for(const message of textCases){
+          textCalls=[];renderBouquet(textCanvas,{...baseState,message,recipient:'W'.repeat(60),sender:'W'.repeat(60)},{width:400,height:500});
+          const letterLines=textCalls.filter(item=>item.y>900&&item.y<1170);
+          if(message.trim()&&!letterLines.length)safeText=false;
+          if(!message.trim()&&letterLines.length)safeText=false;
+          if(letterLines.some(item=>item.y<990||item.y>1165||item.width>770))safeText=false;
+          if(message==='Always you.\n\nAlways us.'&&!letterLines.some(item=>item.text===''))safeText=false;
+          if(textCalls.some(item=>item.y<0||item.y>1220))safeText=false;
+        }
+        record('Long, unbroken, emoji, and newline-heavy notes remain inside the card',safeText,`${textCases.length} extreme text cases`);
+
+        status.textContent='Creating and reopening a real 2400 × 3000 PNG…';await nextFrame();
+        renderBouquet(preview,baseState,{width:800,height:1000});
+        const blob=await exportBouquet(baseState);const image=await imageFromBlob(blob);
+        const imageWidth=image.width||image.naturalWidth;const imageHeight=image.height||image.naturalHeight;
+        record('Download is a lossless PNG at the promised dimensions',blob.type==='image/png'&&imageWidth===2400&&imageHeight===3000,`${imageWidth} × ${imageHeight}; ${Math.round(blob.size/1024)} KB`);
+        const reference=canvas(2400,3000);renderBouquet(reference,baseState,{width:2400,height:3000});const expected=checksum(pixels(reference));
+        const actual=canvas(2400,3000);ctx(actual).drawImage(image,0,0);const exported=checksum(pixels(actual));
+        record('Reopened PNG exactly preserves the full-size renderer pixels',expected===exported,`checksums ${expected} / ${exported}`);
+
+        downloaded.width=800;downloaded.height=1000;const downCtx=ctx(downloaded);downCtx.imageSmoothingEnabled=true;downCtx.imageSmoothingQuality='high';downCtx.drawImage(image,0,0,800,1000);
+        const a=pixels(preview);const b=pixels(downloaded);let total=0;let peak=0;let changed=0;
+        for(let i=0;i<a.length;i+=4){let pixelError=0;for(let channel=0;channel<3;channel++){const diff=Math.abs(a[i+channel]-b[i+channel]);total+=diff;pixelError+=diff;peak=Math.max(peak,diff);}if(pixelError>30)changed++;}
+        const mean=total/(800*1000*3);const largerErrorPercent=changed/(800*1000)*100;
+        window.testResults.colorComparison={meanAbsoluteChannelError:mean,maxChannelError:peak,pixelsOver10AverageErrorPercent:largerErrorPercent};
+        record('Reduced download matches preview colors',mean<=4,`mean difference ${mean.toFixed(3)} / 255; ${largerErrorPercent.toFixed(2)}% of pixels exceed 10/255 average difference (edge smoothing can differ)`);
+        if(image.close)image.close();reference.width=actual.width=0;
+
+        const passed=window.testResults.checks.every(check=>check.passed);window.testResults.status=passed?'passed':'failed';
+        window.testResults.elapsedSeconds=Number(((performance.now()-began)/1000).toFixed(2));
+        status.textContent=`${passed?'All checks passed':'Some checks need attention'} — ${window.testResults.checks.length} checks in ${window.testResults.elapsedSeconds}s.`;
+      }catch(error){
+        record('Verification completed without a runtime error',false,error.message);window.testResults.status='failed';status.textContent=`Verification stopped: ${error.message}`;
+      }finally{
+        window.testResults.finishedAt=new Date().toISOString();document.querySelector('#json').textContent=JSON.stringify(window.testResults,null,2);rerun.disabled=false;
+      }
+    }
+    rerun.addEventListener('click',run);run();
+  </script>
+</body>
+</html>

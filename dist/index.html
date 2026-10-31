@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f8f5ef">
+  <meta name="description" content="Make a little love bloom. Arrange a botanical bouquet, add a personal note, and save a beautiful keepsake with Petal & Ink.">
+  <title>Petal & Ink — A little love, in bloom</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="ink-garden" id="inkGarden" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Petal and Ink home"><svg viewBox="0 0 40 48" aria-hidden="true"><path d="M20 44C18 30 24 22 21 14M20 34C10 33 8 26 8 25C16 25 20 30 20 34M21 29C30 28 33 22 32 20C24 21 22 25 21 29M21 17C10 22 6 11 13 9C9 1 20 0 21 8C25 0 34 5 29 11C37 16 26 24 21 17Z"/></svg><span>petal <i>&</i> ink<small>THE LITTLE BOUQUET STUDIO</small></span></a>
+    <nav aria-label="Main navigation"><a class="active" href="#studio">The studio</a><a href="#how-it-works" id="howLink">How it works <span>↗</span></a></nav>
+    <button class="quiet-button ink-toggle" id="inkToggle" aria-pressed="false"><span aria-hidden="true">✧</span><span id="inkLabel">Pause the ink</span></button>
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="pageTitle">
+      <p class="eyebrow">SMALL GESTURES. BIG FEELINGS.</p>
+      <h1 id="pageTitle">Some feelings deserve <em>flowers.</em></h1>
+      <p>A few favourite blooms. A few words from the heart. Something beautifully yours.</p>
+      <span class="handwritten intro-note">a little love, made by you <svg viewBox="0 0 60 30" aria-hidden="true"><path d="M2 3C19 3 22 24 53 19M44 13L54 19L46 26"/></svg></span>
+    </section>
+    <section class="studio" id="studio" aria-label="Bouquet studio">
+      <div class="workbench">
+        <div class="panel-heading"><span class="eyebrow">YOUR FLORAL RECIPE</span><span class="step-marker">01 — 05</span></div>
+        <fieldset><legend><span class="step">01</span> Start with a favourite <span class="legend-note">the main bloom</span></legend>
+          <div class="flower-grid" id="mainFlowers">
+            <button class="flower-choice selected" type="button" data-flower="rose" aria-pressed="true"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Garden roses</strong><small>For the romantics</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="lily" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Lilies</strong><small>A quiet kind of love</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="poppy" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Poppies</strong><small>A little wild at heart</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="sunflower" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Sunflowers</strong><small>Your daily sunshine</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="tulip" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Tulips</strong><small>A new beginning</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="peony" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Peonies</strong><small>Softly, completely</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="hydrangea" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Hydrangeas</strong><small>A heartfelt thank you</small><span class="choice-check" aria-hidden="true">✓</span></button>
+            <button class="flower-choice" type="button" data-flower="orchid" aria-pressed="false"><canvas width="180" height="140" aria-hidden="true"></canvas><strong>Orchids</strong><small>A rare kind of lovely</small><span class="choice-check" aria-hidden="true">✓</span></button>
+          </div>
+        </fieldset>
+        <fieldset><legend><span class="step">02</span> Add a little company</legend><div class="support-options" id="supportFlowers">
+          <button class="support-choice selected" data-support="daisy" aria-pressed="true"><canvas width="70" height="70" aria-hidden="true"></canvas>Daisies<span aria-hidden="true">✓</span></button>
+          <button class="support-choice" data-support="violet" aria-pressed="false"><canvas width="70" height="70" aria-hidden="true"></canvas>Violets<span aria-hidden="true">✓</span></button>
+          <button class="support-choice" data-support="greenery" aria-pressed="false"><svg viewBox="0 0 40 40" aria-hidden="true"><path d="M13 35Q20 20 27 6M20 20Q8 20 12 10Q23 11 20 20M17 27Q29 28 30 17Q20 17 17 27M25 12Q17 11 21 3Q30 4 25 12"/></svg>Greenery<span aria-hidden="true">✓</span></button>
+          <button class="support-choice" data-support="lavender" aria-pressed="false"><canvas width="70" height="70" aria-hidden="true"></canvas>Lavender<span aria-hidden="true">✓</span></button>
+          <button class="support-choice" data-support="babysbreath" aria-pressed="false"><canvas width="70" height="70" aria-hidden="true"></canvas>Baby’s breath<span aria-hidden="true">✓</span></button>
+        </div></fieldset>
+        <fieldset class="finishing"><legend><span class="step">03</span> The finishing touches</legend><div class="finish-columns"><div><span class="field-label">Wrapping paper</span><div class="swatches" id="wrapOptions"><button class="swatch selected" data-wrap="ivory" aria-label="Ivory wrapping paper" aria-pressed="true" style="--swatch:#eee7d6"></button><button class="swatch" data-wrap="kraft" aria-label="Kraft wrapping paper" aria-pressed="false" style="--swatch:#bb926b"></button><button class="swatch" data-wrap="rose" aria-label="Rose wrapping paper" aria-pressed="false" style="--swatch:#d9b3b1"></button><span id="wrapLabel">Ivory</span></div></div><div><span class="field-label">Ribbon & accents</span><div class="swatches" id="paletteOptions"><button class="swatch selected" data-palette="blush" aria-label="Blush ribbon and accents" aria-pressed="true" style="--swatch:#a75a64"></button><button class="swatch" data-palette="peach" aria-label="Peach ribbon and accents" aria-pressed="false" style="--swatch:#c88b66"></button><button class="swatch" data-palette="lavender" aria-label="Lavender ribbon and accents" aria-pressed="false" style="--swatch:#9683ab"></button></div></div></div></fieldset>
+        <fieldset class="note-fields"><legend><span class="step">04</span> Say it in your own words <svg class="tiny-heart" viewBox="0 0 30 26" aria-hidden="true"><path d="M15 24C-7 10 5-5 15 6C25-5 37 10 15 24Z"/></svg></legend><div class="name-fields"><label>To <input id="recipient" maxlength="35" placeholder="Someone special" autocomplete="off"></label><label>From <input id="sender" maxlength="35" placeholder="With love, you" autocomplete="off"></label></div><label class="message-label" for="message">Your little love note</label><div class="message-wrap"><textarea id="message" maxlength="180" rows="3" placeholder="Some things are easier said with flowers…">If I had a flower for every time I thought of you, I could walk in my garden forever.</textarea><span id="charCount">95 / 180</span></div></fieldset>
+        <fieldset class="sticker-section"><legend><span class="step">05</span> Stick on a little personality <span class="legend-note">optional</span></legend>
+          <p class="sticker-intro">Your favourite WhatsApp sticker, an inside joke, a tiny bit of you.</p>
+          <div class="sticker-dropzone" id="stickerDropzone">
+            <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M19 4H8A4 4 0 0 0 4 8V24A4 4 0 0 0 8 28H18L28 18V8A4 4 0 0 0 24 4H19ZM18 28V22A4 4 0 0 1 22 18H28M11 12H11.1M21 12H21.1M11 17Q16 22 21 17"/></svg>
+            <button type="button" id="stickerUploadButton" class="sticker-upload-button" disabled>Choose sticker files <span aria-hidden="true">＋</span></button>
+            <span class="sticker-upload-hint">or drop images here · paste a copied image</span>
+            <input id="stickerInput" type="file" accept="image/png,image/webp,image/jpeg,image/gif,.png,.webp,.jpg,.jpeg,.gif" multiple hidden>
+          </div>
+          <div class="sticker-helper-row"><span>PNG, WebP, JPG or GIF · up to 5 MB each</span><span id="stickerCount">0 / 6</span></div>
+          <details class="sticker-help"><summary>How do I add a WhatsApp sticker?</summary><p>Choose a sticker image you’ve saved or exported to your device, or paste an image copied from WhatsApp. Available save and copy options depend on your device. This site doesn’t connect to your WhatsApp account or read its sticker collection.</p><p>Your images stay in this browser. Animated stickers are saved as a still image on your keepsake.</p></details>
+          <div class="sticker-list" id="stickerList" aria-label="Your added stickers"></div>
+          <div class="sticker-editor" id="stickerEditor" hidden>
+            <div class="sticker-editor-heading"><span id="selectedStickerName"></span><button type="button" id="removeSticker" class="text-button">Remove</button></div>
+            <div class="sticker-slider-row"><label for="stickerSize">Size <output id="stickerSizeValue" for="stickerSize">16%</output></label><input id="stickerSize" type="range" min="7" max="32" step="1" value="16"></div>
+            <div class="sticker-slider-row"><label for="stickerRotation">Tilt <output id="stickerRotationValue" for="stickerRotation">−8°</output></label><input id="stickerRotation" type="range" min="-180" max="180" step="1" value="-8"></div>
+            <div class="sticker-position-row"><span>Move it</span><div><button type="button" data-sticker-move="left" aria-label="Move sticker left">←</button><button type="button" data-sticker-move="up" aria-label="Move sticker up">↑</button><button type="button" data-sticker-move="down" aria-label="Move sticker down">↓</button><button type="button" data-sticker-move="right" aria-label="Move sticker right">→</button></div></div>
+            <p>Drag it on your keepsake, or use the arrows above.</p>
+          </div>
+          <p id="stickerStatus" class="sticker-status" role="status" aria-live="polite"></p>
+        </fieldset>
+        <div class="draft-line"><span id="draftStatus"><span class="status-dot"></span> Your little creation is saved on this device</span><button id="resetButton" class="text-button">Start fresh</button></div>
+      </div>
+      <div class="preview-column">
+        <div class="preview-heading"><span class="eyebrow">A LITTLE PREVIEW OF YOUR LOVE</span><span class="live-label"><span class="status-dot"></span>Made for you</span></div>
+        <div class="preview-surface"><div class="paper-tape" aria-hidden="true"></div><div class="keepsake" id="keepsake"><canvas id="bouquetCanvas" width="1200" height="1500" role="img" aria-label="Your garden rose and daisy bouquet with a personal message"></canvas><div class="sticker-handles" id="stickerHandles" aria-label="Move stickers on your keepsake"></div><div class="art-loading" id="artLoading" role="status"><span class="loading-flower">✳</span><p>Gathering your blooms…</p></div></div><span class="preview-scribble handwritten" aria-hidden="true">picked with love <svg viewBox="0 0 60 40"><path d="M55 36C30 30 41 6 9 8M18 2L8 8L15 17"/></svg></span></div>
+        <div class="preview-tools"><span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17S1 12 2 6C3 1 9 2 10 5C12 1 18 2 18 7C18 11 10 17 10 17Z"/></svg>Every arrangement is a little different.</span><button id="shuffleButton" class="text-button" disabled><span aria-hidden="true">⤨</span> Rearrange</button></div>
+        <button id="downloadButton" class="download-button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3V15M7 10L12 15L17 10M4 16V21H20V16"/></svg><span id="downloadLabel">Save your bouquet</span><span aria-hidden="true">↗</span></button>
+        <p class="download-detail">A beautiful 2400 × 3000 PNG, ready to send or keep.</p>
+        <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+    <section class="how-section" id="how-it-works"><p class="eyebrow">NO OCCASION NEEDED</p><h2>Just because is reason enough.</h2><p>Pick your blooms, leave a little note, and save your creation.<br>Send it to someone you love. That someone can be you.</p><svg viewBox="0 0 56 45" aria-hidden="true"><path d="M28 40C-11 17 12-10 28 10C47-8 67 16 28 40Z"/></svg></section>
+  </main>
+  <footer><span>petal <i>&</i> ink</span><p>For the things you want to say, but can't quite find the words.</p><span class="footer-note">Made with a little love.</span></footer>
+  <dialog id="resetDialog"><form method="dialog"><p class="eyebrow">A FRESH LITTLE START</p><h2>Make room for new blooms?</h2><p>This will replace the bouquet and note saved on this device.</p><div><button value="cancel" class="quiet-button">Keep this one</button><button value="reset" class="download-button">Start fresh</button></div></form></dialog>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

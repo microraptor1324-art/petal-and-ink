@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Petal & Ink — sticker checks</title>
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    body{max-width:1100px;margin:auto;padding:32px 24px;font:14px/1.65 StudioSans,Arial,sans-serif;background:#f8f5ef;color:#413a34}
+    h1{font:38px/1.15 StudioSerif,Georgia,serif;margin:0 0 14px}.intro-check{max-width:850px;color:#655b53}
+    #status{padding:16px 20px;background:#eee7dc;border-radius:10px;margin:22px 0;font-weight:600}
+    #results{list-style:none;padding:0}#results li{padding:10px 0;border-bottom:1px solid #ded4c8}.pass{color:#285633}.fail{color:#992e43}
+    button{background:#7b3948;color:white;border:0;border-radius:24px;padding:12px 20px}button:disabled{opacity:.55}
+    .images{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:28px 0}.images figure{margin:0;min-width:0}.images canvas{width:100%;height:auto;display:block;box-shadow:0 10px 28px #493b3215}.images figcaption{font-size:12px;margin-top:12px;color:#655b53}
+    pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}@media(max-width:600px){.images{grid-template-columns:1fr}body{padding:24px 18px}h1{font-size:30px}}
+  </style>
+</head>
+<body>
+  <h1>Do your little stickers stay just right?</h1>
+  <p class="intro-check">This page creates small test images in the browser, checks sticker imports and placement, and reopens a real exported bouquet. Draft checks temporarily replace the saved stickers, then restore the original draft in a finally block. Keep the studio idle until these checks finish. Nothing is uploaded.</p>
+  <p id="status" role="status" aria-live="polite">Ready to check stickers.</p>
+  <button id="run" type="button">Run sticker checks</button>
+  <ol id="results"></ol>
+  <div class="images">
+    <figure><canvas id="preview" width="800" height="1000" aria-label="Bouquet with imported test stickers"></canvas><figcaption>Preview with transparent PNG, WebP, JPEG, and frozen GIF fixtures.</figcaption></figure>
+    <figure><canvas id="downloaded" width="800" height="1000" aria-label="Reopened bouquet PNG with stickers"></canvas><figcaption>Actual 2400 × 3000 export, reopened at the same display size.</figcaption></figure>
+  </div>
+  <details><summary>Machine-readable results</summary><pre id="json"></pre></details>
+  <script type="module">
+    const status = document.querySelector('#status');
+    const runButton = document.querySelector('#run');
+    const resultList = document.querySelector('#results');
+    const baseState = { flower:'tulip', support:'lavender', palette:'blush', wrap:'ivory', seed:247,
+      recipient:'Someone lovely', sender:'Me', message:'A little colour, a little love, and a little something that is so you.' };
+    const canvas = (width=400,height=500) => { const item=document.createElement('canvas');item.width=width;item.height=height;return item; };
+    const context = item => item.getContext('2d',{colorSpace:'srgb',willReadFrequently:true});
+    const pixelData = item => context(item).getImageData(0,0,item.width,item.height).data;
+    const assert = (condition, message) => { if(!condition)throw new Error(message); };
+    function checksum(data){let hash=2166136261;for(let i=0;i<data.length;i++)hash=Math.imul(hash^data[i],16777619);return hash>>>0;}
+    function record(name,passed,detail=''){
+      window.stickerTestResults.checks.push({name,passed,detail});
+      const item=document.createElement('li');item.className=passed?'pass':'fail';
+      item.textContent=`${passed?'PASS':'FAIL'} — ${name}${detail?': '+detail:''}`;resultList.append(item);
+      document.querySelector('#json').textContent=JSON.stringify(window.stickerTestResults,null,2);
+    }
+    async function check(name,fn){try{const detail=await fn();record(name,true,detail||'');}catch(error){record(name,false,error.message||String(error));}}
+    async function toBlob(item,type='image/png'){return new Promise((resolve,reject)=>item.toBlob(blob=>blob?resolve(blob):reject(new Error(`Could not create ${type} fixture`)),type,.95));}
+    async function decode(source){const image=new Image();image.src=source;await image.decode();return image;}
+    async function blobImage(blob){const url=URL.createObjectURL(blob);try{return await decode(url);}finally{URL.revokeObjectURL(url);}}
+    function animatedGif(){
+      // Valid GIF89a: one red pixel, then one green pixel. Each frame lasts 0.1s.
+      return new Uint8Array([
+        71,73,70,56,57,97,1,0,1,0,128,0,0,255,0,0,0,255,0,
+        33,255,11,78,69,84,83,67,65,80,69,50,46,48,3,1,0,0,0,
+        33,249,4,0,10,0,0,0,44,0,0,0,0,1,0,1,0,0,2,2,68,1,0,
+        33,249,4,0,10,0,0,0,44,0,0,0,0,1,0,1,0,0,2,2,76,1,0,59
+      ]);
+    }
+    async function fixtures(){
+      const transparent=canvas(64,64),ctx=context(transparent);
+      ctx.fillStyle='#ff0000';ctx.fillRect(16,16,32,32);
+      ctx.fillStyle='rgba(0,0,255,.5)';ctx.fillRect(4,24,8,16);
+      const png=await toBlob(transparent);
+      const webp=await toBlob(transparent,'image/webp');
+      assert(webp.type==='image/webp','This browser did not produce a native WebP fixture.');
+      const opaque=canvas(48,32),opaqueCtx=context(opaque);opaqueCtx.fillStyle='#2359a6';opaqueCtx.fillRect(0,0,48,32);
+      const jpeg=await toBlob(opaque,'image/jpeg');
+      return { png:new File([png],'transparent-heart.png',{type:'image/png'}),
+        webp:new File([webp],'transparent-heart.webp',{type:'image/webp'}),
+        jpeg:new File([jpeg],'blue-note.jpg',{type:'image/jpeg'}),
+        gif:new File([animatedGif()],'two-frame.gif',{type:'image/gif'}) };
+    }
+    async function expectReject(operation){let rejected=false;try{await operation();}catch{rejected=true;}assert(rejected,'The invalid input was accepted.');}
+    function sameRecord(a,b){return a&&b&&['id','name','src','x','y','size','rotation'].every(key=>a[key]===b[key]);}
+    async function run(){
+      runButton.disabled=true;resultList.replaceChildren();status.textContent='Preparing fixtures, artwork, and local fonts…';
+      window.stickerTestResults={status:'running',checks:[],startedAt:new Date().toISOString()};
+      const began=performance.now();let api,backup,canRestore=false;
+      try{
+        api=await import('../stickers.js');
+        const {loadArtwork,renderBouquet,exportBouquet}=await import('../renderer.js');
+        const files=await fixtures(), imported={};
+        await Promise.all([loadArtwork(),...['StudioSerif','StudioSans','StudioHand'].map(name=>document.fonts.load(`20px ${name}`))]);
+        await document.fonts.ready;
+        for(const [index,[format,file]] of Object.entries(files).entries()){
+          await check(`${format.toUpperCase()} imports as a decoded still PNG`,async()=>{
+            const item=await api.importSticker(file,index);assert(item?.src?.startsWith('data:image/png;base64,'),'Import did not produce canonical PNG data.');
+            const image=await decode(item.src);assert(image.naturalWidth>0&&image.naturalHeight>0,'The imported image does not decode.');
+            imported[format]=item;return `${image.naturalWidth} × ${image.naturalHeight}; ${file.size} input bytes`;
+          });
+        }
+        assert(imported.png&&imported.webp&&imported.jpeg&&imported.gif,'All four fixture formats must import before composition checks.');
+        await check('Transparent and semitransparent PNG pixels survive import',async()=>{
+          const image=await decode(imported.png.src),sample=canvas(image.naturalWidth,image.naturalHeight);context(sample).drawImage(image,0,0);
+          const data=pixelData(sample),at=(x,y)=>Array.from(data.slice((y*sample.width+x)*4,(y*sample.width+x)*4+4));
+          assert(at(0,0)[3]===0,'A transparent corner became opaque.');
+          assert(at(32,32).join(',')==='255,0,0,255','The opaque red center changed.');
+          assert(at(8,32)[3]>=126&&at(8,32)[3]<=129,'The half-transparent pixel lost its alpha.');
+          return `corner alpha ${at(0,0)[3]}, center ${at(32,32).join('/')}, half alpha ${at(8,32)[3]}`;
+        });
+        await check('Animated GIF import remains a frozen PNG',async()=>{
+          const first=await decode(imported.gif.src),sample=canvas(1,1);context(sample).drawImage(first,0,0,1,1);const a=checksum(pixelData(sample));
+          await new Promise(resolve=>setTimeout(resolve,250));
+          context(sample).clearRect(0,0,1,1);context(sample).drawImage(first,0,0,1,1);const b=checksum(pixelData(sample));
+          assert(a===b,'Imported animation changed pixels after decoding.');return `unchanged checksum ${a}`;
+        });
+        await check('Unsupported text and SVG files are rejected',async()=>{
+          await expectReject(()=>api.importSticker(new File(['hello'],'note.txt',{type:'text/plain'})));
+          await expectReject(()=>api.importSticker(new File(['<svg xmlns="http://www.w3.org/2000/svg"/>'],'shape.svg',{type:'image/svg+xml'})));
+        });
+        await check('Forged PNG and corrupt raster data are rejected',async()=>{
+          await expectReject(()=>api.importSticker(new File(['not a png'],'forged.png',{type:'image/png'})));
+          await expectReject(()=>api.importSticker(new File([new Uint8Array([137,80,78,71,13,10,26,10,0,0])],'corrupt.png',{type:'image/png'})));
+        });
+        await check('Inputs larger than 5 MiB are rejected',async()=>{
+          const bytes=new Uint8Array(5*1024*1024+1);bytes.set([137,80,78,71,13,10,26,10]);
+          await expectReject(()=>api.importSticker(new File([bytes],'oversized.png',{type:'image/png'})));
+        });
+        await check('Scale, rotation, and placement stay within the card',async()=>{
+          const item=api.constrainSticker({...imported.png,x:-3,y:4,size:20,rotation:37});
+          assert(item.size>=.07&&item.size<=.32,'Size escaped its supported range.');
+          const radians=item.rotation*Math.PI/180,halfX=item.size*(Math.abs(Math.cos(radians))+Math.abs(Math.sin(radians)))/2,halfY=halfX*.8;
+          assert(item.x-halfX>=-1e-6&&item.x+halfX<=1+1e-6&&item.y-halfY>=-1e-6&&item.y+halfY<=1+1e-6,'A rotated square extends outside the 4:5 card.');
+          const invalid=api.constrainSticker({...imported.png,x:NaN,y:Infinity,size:-5,rotation:10000});
+          assert(['x','y','size','rotation'].every(key=>Number.isFinite(invalid[key])),'Constraint returned a nonfinite number.');
+          assert(invalid.size>=.07&&invalid.size<=.32&&Math.abs(invalid.rotation)<=180,'Minimum scale or rotation bound was not enforced.');
+          return `size ${item.size}; center ${item.x.toFixed(3)}, ${item.y.toFixed(3)}; rotation ${item.rotation}°`;
+        });
+        const pngSticker=api.constrainSticker({...imported.png,x:.84,y:.26,size:.15,rotation:0});
+        await api.loadStickerImages([pngSticker]);
+        await check('Sticker colour appears while transparent pixels reveal the original card',async()=>{
+          const before=canvas(800,1000),after=canvas(800,1000);renderBouquet(before,baseState,{width:800,height:1000});
+          renderBouquet(after,{...baseState,stickers:[pngSticker]},{width:800,height:1000});
+          const a=pixelData(before),b=pixelData(after),center=(260*800+672)*4,corner=(205*800+617)*4;
+          assert(Array.from(b.slice(center,center+4)).join(',')==='255,0,0,255','The expected red sticker center is absent.');
+          assert(Array.from(a.slice(corner,corner+4)).join(',')===Array.from(b.slice(corner,corner+4)).join(','),'A transparent sticker corner changed the background.');
+          assert(checksum(a)!==checksum(b),'Adding a sticker did not change the bouquet.');
+        });
+        const stickers=[pngSticker,
+          api.constrainSticker({...imported.webp,x:.15,y:.6,size:.11,rotation:-17}),
+          api.constrainSticker({...imported.jpeg,x:.84,y:.7,size:.09,rotation:12}),
+          api.constrainSticker({...imported.gif,x:.19,y:.23,size:.07,rotation:8})];
+        await api.loadStickerImages(stickers);const state={...baseState,stickers};
+        await check('The same sticker arrangement is deterministic',async()=>{
+          const first=canvas(),second=canvas();renderBouquet(first,state,{width:400,height:500});renderBouquet(second,structuredClone(state),{width:400,height:500});
+          assert(checksum(pixelData(first))===checksum(pixelData(second)),'Repeated renders produced different sticker pixels.');
+        });
+        status.textContent='Exporting and reopening the bouquet with all four sticker formats…';
+        await check('Actual 2400 × 3000 PNG preserves every renderer pixel including stickers',async()=>{
+          const preview=document.querySelector('#preview');renderBouquet(preview,state,{width:800,height:1000});
+          const blob=await exportBouquet(state),image=await blobImage(blob);
+          assert(blob.type==='image/png'&&image.naturalWidth===2400&&image.naturalHeight===3000,'The export format or size is incorrect.');
+          const expected=canvas(2400,3000),actual=canvas(2400,3000);renderBouquet(expected,state,{width:2400,height:3000});context(actual).drawImage(image,0,0);
+          const a=pixelData(expected),b=pixelData(actual);let mismatched=0;for(let i=0;i<a.length;i++)if(a[i]!==b[i])mismatched++;
+          assert(mismatched===0,`${mismatched} color or alpha channels differ from the reference render.`);
+          const target=document.querySelector('#downloaded'),targetCtx=context(target);targetCtx.imageSmoothingEnabled=true;targetCtx.imageSmoothingQuality='high';targetCtx.drawImage(image,0,0,800,1000);
+          expected.width=actual.width=0;return `${Math.round(blob.size/1024)} KB; zero differing channels`;
+        });
+        status.textContent='Checking saved stickers, then restoring the original draft…';
+        backup=await api.readStickerDraft();canRestore=true;
+        await check('Sticker draft restores original image, position, size, and rotation',async()=>{
+          await api.saveStickerDraft(stickers);const restored=await api.readStickerDraft();
+          assert(restored.length===stickers.length&&restored.every((item,index)=>sameRecord(item,stickers[index])),'Saved sticker properties changed or disappeared.');
+          return `${restored.length} stickers restored`;
+        });
+        await check('A pending save snapshots its input and ordered saves keep the newest draft',async()=>{
+          const changing=structuredClone(stickers),expectedX=changing[0].x,pending=api.saveStickerDraft(changing);changing[0].x=.01;await pending;
+          let restored=await api.readStickerDraft();assert(restored[0].x===expectedX,'Mutating input after save changed the saved snapshot.');
+          const older=api.saveStickerDraft([stickers[0]]),newer=api.saveStickerDraft([stickers[1],stickers[2]]);await Promise.all([older,newer]);
+          restored=await api.readStickerDraft();assert(restored.length===2&&sameRecord(restored[0],stickers[1]),'A stale save overwrote the newest draft.');
+        });
+        await check('Reset persists an empty sticker draft',async()=>{
+          await api.saveStickerDraft([]);assert((await api.readStickerDraft()).length===0,'Reset stickers returned after reading the draft.');
+        });
+      }catch(error){record('Verification completed without a runtime error',false,error.message||String(error));}
+      finally{
+        if(canRestore){await check('Original sticker draft was restored after testing',async()=>{
+          await api.saveStickerDraft(backup);const restored=await api.readStickerDraft();
+          assert(restored.length===backup.length&&restored.every((item,index)=>sameRecord(item,backup[index])),'Original sticker draft could not be verified after restore.');
+          return `${backup.length} original stickers retained`;
+        });}
+        window.stickerTestResults.status=window.stickerTestResults.checks.every(item=>item.passed)?'passed':'failed';
+        window.stickerTestResults.elapsedSeconds=Number(((performance.now()-began)/1000).toFixed(2));window.stickerTestResults.finishedAt=new Date().toISOString();
+        status.textContent=`${window.stickerTestResults.status==='passed'?'All checks passed':'Some checks need attention'} — ${window.stickerTestResults.checks.length} checks in ${window.stickerTestResults.elapsedSeconds}s.`;
+        document.querySelector('#json').textContent=JSON.stringify(window.stickerTestResults,null,2);runButton.disabled=false;
+      }
+    }
+    runButton.addEventListener('click',run);
+  </script>
+</body>
+</html>

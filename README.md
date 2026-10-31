@@ -51,4 +51,3 @@ Deploying this replacement does not automatically change `build-a-bouquet.vercel
 Before release, exercise every selection, verify the mobile layout and keyboard controls, and open an exported PNG to compare it with the preview. Verify sticker uploads, limits, editing, removal, refresh restoration, and preview/export fidelity, including a transparent image and an animated image rendered as a still. The intended export size is 2400 × 3000 pixels. Review the accompanying delivery notes for the checks actually completed in this environment.
 
 The collection includes eight main flowers and five supporting choices. The browser harness checks all 360 flower/support/wrap/palette combinations, 40 distinct flower pairs, deterministic arrangements, difficult text, export dimensions, and exact PNG pixel preservation. See `VERIFICATION.md` for recorded results.
-

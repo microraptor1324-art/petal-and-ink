@@ -1,0 +1,7 @@
+node_modules/
+.openai/
+.vercel/
+*.tar.gz
+test-results/
+
+.vercel
